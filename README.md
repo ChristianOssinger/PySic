@@ -1,9 +1,8 @@
 # 🚀 PySic – Physics Calculator
-<p align="center">
-  <img src="screenshots/banner.png" alt="PySic Logo" width="300">
-</p>
 
 > Interactive physics calculator for projectile motion and complex numbers — built with HTML, CSS and JavaScript.
+
+
 > **Note:** The app interface is currently in 🇩🇪 German.
 
 ---
@@ -19,7 +18,6 @@ Works on desktop and mobile — no installation needed, runs entirely in the bro
 ## ✨ Features
 
 ### 🎯 Projectile Motion (`PySic.html`)
-
 - **3 calculation modes:**
   - Classic projectile motion
   - With initial height (h₀)
@@ -31,7 +29,6 @@ Works on desktop and mobile — no installation needed, runs entirely in the bro
 - Fully responsive — works on mobile
 
 ### 🔢 Complex Numbers (`PySic_Komplex.html`)
-
 - All 4 arithmetic operations: +, −, ×, ÷
 - Division implemented manually via conjugate denominator
 - **Gaussian plane** visualization with Plotly.js
@@ -44,11 +41,11 @@ Works on desktop and mobile — no installation needed, runs entirely in the bro
 
 | Projectile Motion (45°) | Projectile Motion (15°) |
 |---|---|
-| ![45 degrees](screenshots/45deg.png) | ![15 degrees](screenshots/15deg.png) |
+| ![45 degrees](45deg.png) | ![15 degrees](15deg.png) |
 
 | Complex Numbers | Mobile View |
 |---|---|
-| ![Complex](screenshots/complex.png) | ![Mobile](screenshots/mobile.jpg) |
+| ![Complex](complex.png) | ![Mobile](mobile.jpg) |
 
 *(Screenshots in `/screenshots` folder)*
 
@@ -72,7 +69,6 @@ Just open `PySic.html` in any browser.
 ## 🧪 Physics Behind It
 
 ### Projectile Motion
-
 ```
 x(t) = v₀ · cos(α) · t
 y(t) = v₀ · sin(α) · t - ½ · g · t²
@@ -83,7 +79,6 @@ Flight time: T = 2 · v₀ · sin(α) / g
 ```
 
 ### Complex Division (conjugate method)
-
 ```
 Z₁/Z₂ = (Z₁ · Z₂*) / |Z₂|²
 
@@ -95,15 +90,13 @@ where Z₂* is the complex conjugate of Z₂
 ## 🚀 How to Use
 
 **Option 1 — Direct download:**
-
 1. Download `PySic.html`
 2. Open in any browser
 3. Done ✅
 
 **Option 2 — Clone repository:**
-
 ```bash
-git clone https://github.com/ChrisChrOss38/PySic.git
+git clone https://github.com/ChristianOssinger/PySic.git
 cd PySic
 # Open PySic.html in browser
 ```
@@ -139,10 +132,10 @@ PySic/
 
 ## 👤 Author
 
-**Christian** — Mechatronics technician & hobbyist developer from Austria 🇦🇹
+**Chris** — Mechatronics technician & hobbyist developer from Austria 🇦🇹
 
-- GitHub: [@Christian Ossinger](https://github.com/ChristianOssinger)
-- LinkedIn: http//www.linkedin.com/in/christian-ossinger-3238253aa/?skipRedirect=true
+- GitHub: [@ChristianOssinger](https://github.com/ChristianOssinger)
+- LinkedIn: https://www.linkedin.com/in/christian-ossinger-3238253aa/
 
 ---
 

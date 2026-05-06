@@ -1,6 +1,6 @@
 # 🚀 PySic – Physics Calculator
 <p align="center">
-  <img src="banner.png" alt="PySic Logo" width="300">
+  <img src="banner.png" alt="PySic Logo" width="200">
 </p>  
 > Interactive physics calculator for projectile motion and complex numbers — built with HTML, CSS and JavaScript.
 

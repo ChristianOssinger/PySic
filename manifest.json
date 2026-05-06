@@ -1,0 +1,22 @@
+{
+  "name": "PySic – Physics Calculator",
+  "short_name": "PySic",
+  "description": "Interactive physics calculator for projectile motion and complex numbers",
+  "start_url": "/PySic/",
+  "display": "standalone",
+  "background_color": "#0b0f1a",
+  "theme_color": "#0b0f1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "banner.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "banner.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

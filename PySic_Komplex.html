@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PySic – Komplexe Zahlen</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d14;
+    --panel: #12121f;
+    --border: #1e1e35;
+    --z1: #a78bfa;
+    --z2: #f472b6;
+    --zr: #34d399;
+    --text: #e2e8f0;
+    --muted: #555577;
+    --accent: #a78bfa;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 36px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image:
+      radial-gradient(ellipse at 15% 10%, rgba(167,139,250,0.08) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 85%, rgba(244,114,182,0.07) 0%, transparent 45%);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  header h1 {
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, var(--z1), var(--z2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    margin-top: 6px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 1150px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    animation: fadeUp 0.7s ease 0.2s both;
+  }
+
+  /* ---- Panel ---- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 26px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel.z1-accent::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background: linear-gradient(90deg, var(--z1), transparent); }
+  .panel.z2-accent::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background: linear-gradient(90deg, var(--z2), transparent); }
+  .panel.zr-accent::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background: linear-gradient(90deg, var(--zr), transparent); }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .section-label.c1 { color: var(--z1); }
+  .section-label.c2 { color: var(--z2); }
+  .section-label.cr { color: var(--zr); }
+
+  /* ---- Z inputs ---- */
+  .z-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+
+  .z-inputs label {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .z-inputs input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .z-inputs input:focus { border-color: var(--accent); }
+
+  .z-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    min-height: 36px;
+  }
+  .z-display.c1 { color: var(--z1); border-color: rgba(167,139,250,0.2); }
+  .z-display.c2 { color: var(--z2); border-color: rgba(244,114,182,0.2); }
+
+  /* ---- Op buttons ---- */
+  .op-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .op-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 1.3rem;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .op-btn:hover { border-color: var(--accent); color: var(--text); }
+  .op-btn.active { background: rgba(167,139,250,0.15); border-color: var(--z1); color: var(--z1); }
+
+  .calc-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--z1), #7c3aed);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(167,139,250,0.3);
+  }
+  .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(167,139,250,0.45); }
+  .calc-btn:active { transform: translateY(0); }
+
+  .error {
+    margin-top: 10px;
+    color: #f87171;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    display: none;
+  }
+
+  /* ---- Right column ---- */
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ---- Result panel ---- */
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .result-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .result-block .rlbl {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .result-block .rval {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+  .result-block .rval.cr { color: var(--zr); }
+  .result-block .rval.cp { color: #fb923c; }
+
+  /* ---- Polar cards ---- */
+  .polar-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  .polar-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+
+  .polar-card .pval {
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .polar-card .plbl {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ---- Chart ---- */
+  .chart-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+  }
+  .chart-panel::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background: linear-gradient(90deg, var(--zr), var(--z2), transparent); }
+
+  #plot { width:100%; height:400px; }
+
+  .empty-state {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:400px; color:var(--muted); font-family:'Space Mono',monospace;
+    font-size:0.78rem; letter-spacing:2px; gap:12px;
+  }
+  .empty-state .icon { font-size:2.8rem; opacity:0.25; }
+
+  /* ---- Legend ---- */
+  .legend-row {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    font-family: 'Space Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); padding: 0 4px;
+  }
+  .legend-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
+
+  @media(max-width:800px) {
+    .app { grid-template-columns: 1fr; }
+    .polar-row { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+<h1>PySic</h1>
+  <p>Komplexe Zahlen · Gaußsche Ebene</p>
+</header>
+
+<div class="app">
+
+  <!-- LEFT: inputs -->
+  <div class="panel z1-accent">
+
+    <div class="section-label c1">// Z₁ eingeben</div>
+    <div class="z-inputs">
+      <div>
+        <label>Realteil</label>
+        <input type="number" id="x1" placeholder="0" step="any" oninput="updateDisplay()">
+      </div>
+      <div>
+        <label>Imaginärteil</label>
+        <input type="number" id="y1" placeholder="0" step="any" oninput="updateDisplay()">
+      </div>
+    </div>
+    <div class="z-display c1" id="disp1">Z₁ = ?</div>
+
+    <div class="section-label c2">// Z₂ eingeben</div>
+    <div class="z-inputs">
+      <div>
+        <label>Realteil</label>
+        <input type="number" id="x2" placeholder="0" step="any" oninput="updateDisplay()">
+      </div>
+      <div>
+        <label>Imaginärteil</label>
+        <input type="number" id="y2" placeholder="0" step="any" oninput="updateDisplay()">
+      </div>
+    </div>
+    <div class="z-display c2" id="disp2">Z₂ = ?</div>
+
+    <div class="section-label c1">// Operation</div>
+    <div class="op-grid">
+      <button class="op-btn active" onclick="setOp('+')" id="op+">＋</button>
+      <button class="op-btn" onclick="setOp('-')" id="op-">－</button>
+      <button class="op-btn" onclick="setOp('*')" id="op*">×</button>
+      <button class="op-btn" onclick="setOp('/')" id="op/">÷</button>
+    </div>
+
+    <button class="calc-btn" onclick="berechnen()">▶ Berechnen</button>
+    <div class="error" id="error">Bitte gültige Zahlen eingeben!</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+
+    <!-- Result -->
+    <div class="panel zr-accent" id="result-panel" style="display:none">
+      <div class="section-label cr">// Ergebnis</div>
+      <div class="result-grid">
+        <div class="result-block">
+          <div class="rlbl">Kartesisch</div>
+          <div class="rval cr" id="res-kartesisch">–</div>
+        </div>
+        <div class="result-block">
+          <div class="rlbl">Polarform</div>
+          <div class="rval cp" id="res-polar">–</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Polar info for all 3 -->
+    <div class="panel" id="polar-panel" style="display:none">
+      <div class="section-label c1">// Polarform aller Zahlen</div>
+      <div class="polar-row">
+        <div class="polar-card">
+          <div class="pval" style="color:var(--z1)" id="p-z1-r">–</div>
+          <div class="plbl">|Z₁| Betrag</div>
+          <div class="pval" style="color:var(--z1);margin-top:8px" id="p-z1-phi">–</div>
+          <div class="plbl">φ₁ Phase</div>
+        </div>
+        <div class="polar-card">
+          <div class="pval" style="color:var(--z2)" id="p-z2-r">–</div>
+          <div class="plbl">|Z₂| Betrag</div>
+          <div class="pval" style="color:var(--z2);margin-top:8px" id="p-z2-phi">–</div>
+          <div class="plbl">φ₂ Phase</div>
+        </div>
+        <div class="polar-card">
+          <div class="pval" style="color:var(--zr)" id="p-zr-r">–</div>
+          <div class="plbl">|Z| Betrag</div>
+          <div class="pval" style="color:var(--zr);margin-top:8px" id="p-zr-phi">–</div>
+          <div class="plbl">φ Phase</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-panel">
+      <div class="legend-row" id="legend" style="display:none;margin-bottom:12px">
+        <span><span class="legend-dot" style="background:var(--z1)"></span>Z₁</span>
+        <span><span class="legend-dot" style="background:var(--z2)"></span>Z₂</span>
+        <span><span class="legend-dot" style="background:var(--zr)"></span>Ergebnis</span>
+      </div>
+      <div class="empty-state" id="empty">
+        <span class="icon">ℂ</span>
+        <span>Zahlen eingeben und berechnen</span>
+      </div>
+      <div id="plot" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let currentOp = '+';
+
+function fmt(re, im) {
+  const sign = im < 0 ? '−' : '+';
+  return `${round(re)} ${sign} ${round(Math.abs(im))}j`;
+}
+function round(v, d=3) { return Math.round(v * 10**d) / 10**d; }
+function deg(rad) { return round(rad * 180 / Math.PI, 2); }
+function polar(re, im) {
+  const r = Math.sqrt(re*re + im*im);
+  const phi = Math.atan2(im, re);
+  return { r, phi };
+}
+
+function setOp(op) {
+  currentOp = op;
+  ['+','-','*','/'].forEach(o => document.getElementById('op'+o).classList.toggle('active', o===op));
+}
+
+function updateDisplay() {
+  const x1 = parseFloat(document.getElementById('x1').value);
+  const y1 = parseFloat(document.getElementById('y1').value);
+  const x2 = parseFloat(document.getElementById('x2').value);
+  const y2 = parseFloat(document.getElementById('y2').value);
+  document.getElementById('disp1').textContent = (!isNaN(x1)&&!isNaN(y1)) ? `Z₁ = ${fmt(x1,y1)}` : 'Z₁ = ?';
+  document.getElementById('disp2').textContent = (!isNaN(x2)&&!isNaN(y2)) ? `Z₂ = ${fmt(x2,y2)}` : 'Z₂ = ?';
+}
+
+function berechnen() {
+  document.getElementById('error').style.display = 'none';
+  const x1 = parseFloat(document.getElementById('x1').value);
+  const y1 = parseFloat(document.getElementById('y1').value);
+  const x2 = parseFloat(document.getElementById('x2').value);
+  const y2 = parseFloat(document.getElementById('y2').value);
+
+  if ([x1,y1,x2,y2].some(isNaN)) {
+    document.getElementById('error').style.display = 'block'; return;
+  }
+
+  let re, im;
+
+  if (currentOp === '+') {
+    re = x1 + x2; im = y1 + y2;
+  } else if (currentOp === '-') {
+    re = x1 - x2; im = y1 - y2;
+  } else if (currentOp === '*') {
+    // (a+bi)(c+di) = ac-bd + (ad+bc)i
+    re = x1*x2 - y1*y2;
+    im = x1*y2 + y1*x2;
+  } else { // division — deine Methode!
+    const denom = x2*x2 + y2*y2;
+    if (denom === 0) { document.getElementById('error').style.display='block'; return; }
+    re = (x1*x2 + y1*y2) / denom;
+    im = (y1*x2 - x1*y2) / denom;
+  }
+
+  // Polar
+  const pZ1 = polar(x1,y1);
+  const pZ2 = polar(x2,y2);
+  const pZr = polar(re,im);
+
+  // Results
+  document.getElementById('res-kartesisch').textContent = fmt(re, im);
+  document.getElementById('res-polar').textContent = `${round(pZr.r)} · e^(${deg(pZr.phi)}°i)`;
+
+  document.getElementById('p-z1-r').textContent   = round(pZ1.r);
+  document.getElementById('p-z1-phi').textContent = deg(pZ1.phi) + '°';
+  document.getElementById('p-z2-r').textContent   = round(pZ2.r);
+  document.getElementById('p-z2-phi').textContent = deg(pZ2.phi) + '°';
+  document.getElementById('p-zr-r').textContent   = round(pZr.r);
+  document.getElementById('p-zr-phi').textContent = deg(pZr.phi) + '°';
+
+  document.getElementById('result-panel').style.display = '';
+  document.getElementById('polar-panel').style.display  = '';
+  document.getElementById('legend').style.display       = 'flex';
+
+  plotGauss(x1,y1, x2,y2, re,im);
+}
+
+function makeArrow(x, y, color, name) {
+  // Arrow as line from origin to point + scatter marker
+  return [
+    {
+      x: [0, x], y: [0, y],
+      type: 'scatter', mode: 'lines',
+      line: { color, width: 2.5 },
+      showlegend: false,
+      hoverinfo: 'skip'
+    },
+    {
+      x: [x], y: [y],
+      type: 'scatter', mode: 'markers+text',
+      marker: { color, size: 10, symbol: 'circle' },
+      text: [name],
+      textposition: x >= 0 ? 'top right' : 'top left',
+      textfont: { color, family: 'Space Mono', size: 12, weight: 700 },
+      name,
+      hovertemplate: `<b>${name}</b><br>Re: ${round(x)}<br>Im: ${round(y)}<extra></extra>`
+    }
+  ];
+}
+
+function plotGauss(x1,y1, x2,y2, re,im) {
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('plot').style.display  = 'block';
+
+  const traces = [
+    ...makeArrow(x1, y1, '#a78bfa', 'Z₁'),
+    ...makeArrow(x2, y2, '#f472b6', 'Z₂'),
+    ...makeArrow(re, im,  '#34d399', 'Z'),
+  ];
+
+  // Arc for angle of result
+  const { r: rr, phi: phiR } = polar(re, im);
+  if (rr > 0) {
+    const arcR = rr * 0.25;
+    const steps = 60;
+    const arcX = [], arcY = [];
+    for (let i = 0; i <= steps; i++) {
+      const a = (phiR / steps) * i;
+      arcX.push(arcR * Math.cos(a));
+      arcY.push(arcR * Math.sin(a));
+    }
+    traces.push({
+      x: arcX, y: arcY,
+      type: 'scatter', mode: 'lines',
+      line: { color: '#34d399', width: 1, dash: 'dot' },
+      showlegend: false, hoverinfo: 'skip'
+    });
+  }
+
+  const allX = [0, x1, x2, re];
+  const allY = [0, y1, y2, im];
+  const pad  = v => v * 1.3 || 2;
+  const xMax = pad(Math.max(...allX.map(Math.abs)));
+  const yMax = pad(Math.max(...allY.map(Math.abs)));
+  const ax   = Math.max(xMax, yMax);
+
+  const layout = {
+    paper_bgcolor: 'transparent',
+    plot_bgcolor:  'transparent',
+    font: { color: '#94a3b8', family: 'Space Mono' },
+    xaxis: {
+      title: 'Realteil (Re)',
+      range: [-ax, ax],
+      gridcolor: '#1e1e35', zerolinecolor: '#2d2d50', zerolinewidth: 2,
+      tickfont: { color: '#555577' },
+      scaleanchor: 'y', scaleratio: 1,
+    },
+    yaxis: {
+      title: 'Imaginärteil (Im)',
+      range: [-ax, ax],
+      gridcolor: '#1e1e35', zerolinecolor: '#2d2d50', zerolinewidth: 2,
+      tickfont: { color: '#555577' },
+    },
+    showlegend: true,
+    legend: {
+      font: { color: '#94a3b8', size: 11 },
+      bgcolor: 'rgba(18,18,31,0.85)',
+      bordercolor: '#1e1e35', borderwidth: 1,
+    },
+    margin: { t: 20, l: 60, r: 20, b: 50 },
+    hovermode: 'closest',
+    hoverlabel: { bgcolor: '#12121f', font: { family: 'Space Mono', color: '#e2e8f0' } },
+    shapes: [
+      // unit circle
+      {
+        type: 'circle',
+        xref: 'x', yref: 'y',
+        x0: -1, y0: -1, x1: 1, y1: 1,
+        line: { color: '#1e1e35', width: 1, dash: 'dot' },
+        fillcolor: 'rgba(0,0,0,0)'
+      }
+    ]
+  };
+
+  Plotly.newPlot('plot', traces, layout, { responsive: true, displayModeBar: false });
+}
+</script>
+</body>
+</html>

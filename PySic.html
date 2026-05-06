@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PySic – Schiefer Wurf</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b0f1a;
+    --panel: #111827;
+    --border: #1f2d45;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #39d98a;
+    --yellow: #facc15;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 16px 60px;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(0,212,255,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,107,53,0.05) 0%, transparent 50%);
+  }
+
+  header { text-align:center; margin-bottom:36px; animation:fadeDown 0.6s ease both; }
+  header h1 {
+    font-size:clamp(2.2rem,6vw,3.8rem); font-weight:800; letter-spacing:-2px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  header p { color:var(--muted); font-family:'Space Mono',monospace; font-size:0.72rem; margin-top:6px; letter-spacing:3px; text-transform:uppercase; }
+
+  .app { width:100%; max-width:1100px; display:grid; grid-template-columns:290px 1fr; gap:20px; animation:fadeUp 0.7s ease 0.2s both; }
+
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:24px; position:relative; overflow:hidden; }
+  .panel.top-cyan::before  { content:''; position:absolute; top:0;left:0;right:0;height:2px; background:linear-gradient(90deg,var(--accent),transparent); }
+  .panel.top-orange::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background:linear-gradient(90deg,var(--accent2),transparent); }
+
+  .slabel { font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:3px; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+
+  .mode-buttons { display:flex; flex-direction:column; gap:7px; margin-bottom:22px; }
+  .mode-btn { background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'Syne',sans-serif; font-size:0.88rem; padding:10px 14px; cursor:pointer; transition:all 0.2s; text-align:left; }
+  .mode-btn:hover { border-color:var(--accent); color:var(--text); }
+  .mode-btn.active { background:rgba(0,212,255,0.1); border-color:var(--accent); color:var(--accent); font-weight:700; }
+
+  .fields { display:flex; flex-direction:column; gap:13px; }
+  .field label { display:block; font-family:'Space Mono',monospace; font-size:0.63rem; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+  .field input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'Space Mono',monospace; font-size:1rem; padding:9px 12px; outline:none; transition:border-color 0.2s; }
+  .field input:focus { border-color:var(--accent); }
+
+  .angle-preview { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; margin-top:6px; }
+  .angle-preview .albl { font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+  #kanone { width:100%; max-width:210px; }
+  #winkel-anzeige { font-family:'Space Mono',monospace; font-size:0.82rem; color:var(--accent); margin-top:5px; }
+
+  .calc-btn { width:100%; margin-top:20px; padding:13px; background:linear-gradient(135deg,var(--accent),#0099cc); border:none; border-radius:10px; color:#000; font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; cursor:pointer; letter-spacing:1px; transition:transform 0.15s,box-shadow 0.15s; box-shadow:0 4px 20px rgba(0,212,255,0.3); }
+  .calc-btn:hover { transform:translateY(-2px); box-shadow:0 6px 28px rgba(0,212,255,0.4); }
+  .calc-btn:active { transform:translateY(0); }
+
+  .error { margin-top:10px; color:#f87171; font-family:'Space Mono',monospace; font-size:0.72rem; display:none; }
+
+  .right-col { display:flex; flex-direction:column; gap:18px; }
+
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .stat-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center; }
+  .stat-card.hl { border-color:var(--accent); }
+  .stat-card .val { font-family:'Space Mono',monospace; font-size:1.3rem; font-weight:700; color:var(--accent); }
+  .stat-card .lbl { font-size:0.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:3px; font-family:'Space Mono',monospace; }
+
+  .chart-panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:20px; position:relative; overflow:hidden; }
+  .chart-panel::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background:linear-gradient(90deg,var(--accent2),var(--accent),transparent); }
+
+  .chart-title { font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--muted); margin-bottom:14px; letter-spacing:1px; }
+
+  #wurf-canvas { display:block; border-radius:8px; }
+
+  .chart-legend { display:flex; gap:18px; flex-wrap:wrap; margin-top:12px; font-family:'Space Mono',monospace; font-size:0.68rem; color:var(--muted); }
+  .ldot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+
+  .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; color:var(--muted); font-family:'Space Mono',monospace; font-size:0.75rem; letter-spacing:2px; gap:10px; }
+  .empty-state .icon { font-size:2.5rem; opacity:0.25; }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
+
+  @media(max-width:750px) { .app { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+<h1>PySic</h1>
+  <p>Schiefer Wurf · Physik Rechner</p>
+</header>
+
+<div class="app">
+  <!-- LEFT -->
+  <div class="panel top-cyan">
+    <div class="slabel">// Modus</div>
+    <div class="mode-buttons">
+      <button class="mode-btn active" onclick="setMode('klassisch')">Schiefer Wurf</button>
+      <button class="mode-btn" onclick="setMode('hoehe')">Mit Anfangshöhe</button>
+      <button class="mode-btn" onclick="setMode('energie')">Energieerhaltung</button>
+    </div>
+
+    <div class="slabel">// Eingabe</div>
+    <div class="fields">
+      <div class="field" id="f-v0">
+        <label>Geschwindigkeit [m/s]</label>
+        <input type="number" id="v0" placeholder="z.B. 20" step="any">
+      </div>
+      <div class="field" id="f-energie" style="display:none">
+        <label>Gesamtenergie [J]</label>
+        <input type="number" id="energie" placeholder="z.B. 100" step="any">
+      </div>
+      <div class="field" id="f-masse" style="display:none">
+        <label>Masse [kg]</label>
+        <input type="number" id="masse" placeholder="z.B. 1" step="any">
+      </div>
+      <div class="field">
+        <label>Winkel [°]</label>
+        <input type="number" id="winkel" placeholder="z.B. 45" step="any" oninput="updateKanone()">
+        <div class="angle-preview">
+          <div class="albl">// Vorschau</div>
+          <canvas id="kanone" width="210" height="110"></canvas>
+          <div id="winkel-anzeige">α = –</div>
+        </div>
+      </div>
+      <div class="field" id="f-anfangshoehe" style="display:none">
+        <label>Anfangshöhe [m]</label>
+        <input type="number" id="anfangshoehe" placeholder="z.B. 10" step="any">
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="berechnen()">▶ Berechnen</button>
+    <div class="error" id="error">Bitte gültige Zahlen eingeben!</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+    <div class="stats-row" id="stats" style="display:none">
+      <div class="stat-card hl"><div class="val" id="stat-weite">–</div><div class="lbl">Wurfweite [m]</div></div>
+      <div class="stat-card"><div class="val" id="stat-hoehe">–</div><div class="lbl">Max. Höhe [m]</div></div>
+      <div class="stat-card"><div class="val" id="stat-zeit">–</div><div class="lbl">Flugzeit [s]</div></div>
+    </div>
+
+    <div class="chart-panel" id="chart-panel">
+      <div class="chart-title" id="chart-title" style="display:none"></div>
+      <div class="empty-state" id="empty">
+        <span class="icon">🎯</span>
+        <span>Parameter eingeben und berechnen</span>
+      </div>
+      <canvas id="wurf-canvas" style="display:none"></canvas>
+      <div class="chart-legend" id="chart-legend" style="display:none">
+        <span><span class="ldot" style="background:var(--accent)"></span>Trajektorie</span>
+        <span><span class="ldot" style="background:var(--yellow)"></span>Abschusswinkel</span>
+        <span><span class="ldot" style="background:var(--accent2)"></span>Max. Höhe</span>
+        <span><span class="ldot" style="background:var(--green)"></span>Landung</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const g = 9.81;
+let currentMode = 'klassisch';
+let lastParams = null; // for redraw on resize
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach((b,i) =>
+    b.classList.toggle('active', ['klassisch','hoehe','energie'][i] === mode));
+  document.getElementById('f-v0').style.display        = mode !== 'energie' ? '' : 'none';
+  document.getElementById('f-energie').style.display   = mode === 'energie' ? '' : 'none';
+  document.getElementById('f-masse').style.display     = mode === 'energie' ? '' : 'none';
+  document.getElementById('f-anfangshoehe').style.display = mode === 'hoehe' ? '' : 'none';
+  document.getElementById('error').style.display = 'none';
+}
+
+// ── Mini-Kanone ──────────────────────────────────────────────
+function updateKanone() {
+  const deg = parseFloat(document.getElementById('winkel').value);
+  const cv = document.getElementById('kanone');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  ctx.strokeStyle = '#1f2d45'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(10,H-18); ctx.lineTo(W-10,H-18); ctx.stroke();
+
+  const ox=38, oy=H-18;
+  const valid = !isNaN(deg);
+  const d = valid ? Math.max(0, Math.min(90, deg)) : 45;
+  document.getElementById('winkel-anzeige').textContent = valid ? `α = ${deg}°` : 'α = –';
+
+  const arcR=26;
+  ctx.strokeStyle='#facc15'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(ox,oy,arcR,-d*Math.PI/180,0,true); ctx.stroke();
+
+  const mid=(d/2)*Math.PI/180;
+  ctx.fillStyle='#facc15'; ctx.font='9px Space Mono,monospace';
+  ctx.fillText(valid?`${Math.round(deg)}°`:'45°', ox+(arcR+7)*Math.cos(mid), oy-(arcR+5)*Math.sin(mid));
+
+  const rad=d*Math.PI/180, len=65;
+  const ex=ox+len*Math.cos(rad), ey=oy-len*Math.sin(rad);
+  ctx.strokeStyle='#00d4ff'; ctx.lineWidth=2.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ex,ey); ctx.stroke();
+
+  const hl=9,ha=0.38;
+  ctx.fillStyle='#00d4ff'; ctx.beginPath();
+  ctx.moveTo(ex,ey);
+  ctx.lineTo(ex-hl*Math.cos(rad-ha),ey+hl*Math.sin(rad-ha));
+  ctx.lineTo(ex-hl*Math.cos(rad+ha),ey+hl*Math.sin(rad+ha));
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(ox,oy,7,0,Math.PI*2); ctx.fill();
+}
+
+// ── Physics ──────────────────────────────────────────────────
+function berechnen() {
+  document.getElementById('error').style.display='none';
+  const phi_deg = parseFloat(document.getElementById('winkel').value);
+  if (isNaN(phi_deg)) { document.getElementById('error').style.display='block'; return; }
+  const phi = phi_deg * Math.PI/180;
+  let xs,ys,xMax,hMax,flugzeit,vx,vy,h0=0,title;
+
+  if (currentMode==='klassisch') {
+    const v0=parseFloat(document.getElementById('v0').value);
+    if (isNaN(v0)||v0<=0){document.getElementById('error').style.display='block';return;}
+    vx=v0*Math.cos(phi); vy=v0*Math.sin(phi);
+    flugzeit=2*vy/g; hMax=vy*vy/(2*g); xMax=vx*flugzeit;
+    title=`Schiefer Wurf · v₀=${v0} m/s · α=${phi_deg}°`;
+
+  } else if (currentMode==='hoehe') {
+    const v0=parseFloat(document.getElementById('v0').value);
+    h0=parseFloat(document.getElementById('anfangshoehe').value)||0;
+    if (isNaN(v0)||v0<=0){document.getElementById('error').style.display='block';return;}
+    vx=v0*Math.cos(phi); vy=v0*Math.sin(phi);
+    const p=2*vy/g,q=-2*h0/g;
+    flugzeit=p/2+Math.sqrt((p/2)**2+(-q));
+    const tS=vy/g; hMax=vy*tS-0.5*g*tS*tS+h0; xMax=vx*flugzeit;
+    title=`Mit h₀=${h0} m · v₀=${v0} m/s · α=${phi_deg}°`;
+
+  } else {
+    const E=parseFloat(document.getElementById('energie').value);
+    const m=parseFloat(document.getElementById('masse').value);
+    if (isNaN(E)||isNaN(m)||m<=0||E<=0){document.getElementById('error').style.display='block';return;}
+    const v0=Math.sqrt(2*E/m);
+    vx=v0*Math.cos(phi); vy=v0*Math.sin(phi);
+    flugzeit=2*vy/g; hMax=(E-0.5*m*vx*vx)/(m*g); xMax=vx*flugzeit;
+    title=`Energie · E=${E} J · m=${m} kg · α=${phi_deg}°`;
+  }
+
+  const n=300;
+  xs=[]; ys=[];
+  for(let i=0;i<n;i++){
+    const ti=flugzeit*i/(n-1);
+    xs.push(vx*ti);
+    ys.push(vy*ti-0.5*g*ti*ti+h0);
+  }
+
+  document.getElementById('stat-weite').textContent=xMax.toFixed(2);
+  document.getElementById('stat-hoehe').textContent=hMax.toFixed(2);
+  document.getElementById('stat-zeit').textContent=flugzeit.toFixed(2);
+  document.getElementById('stats').style.display='grid';
+  document.getElementById('chart-title').textContent=title;
+  document.getElementById('chart-title').style.display='';
+
+  lastParams={xs,ys,xMax,hMax,phi,phi_deg,h0};
+  drawCanvas(lastParams);
+}
+
+// ── Canvas ────────────────────────────────────────────────────
+function drawCanvas({xs,ys,xMax,hMax,phi,phi_deg,h0}) {
+  const cv  = document.getElementById('wurf-canvas');
+  const panel = document.getElementById('chart-panel');
+  const dpr = window.devicePixelRatio||1;
+
+  // Padding in CSS pixels
+  const PAD = {top:30, right:24, bottom:48, left:54};
+
+  // Available width for the drawing area
+  const panelW  = panel.clientWidth - 40;
+  const drawW   = panelW - PAD.left - PAD.right;
+
+  // plt.xlim(0, x_max * 1.1) / plt.ylim(0, h_max * 1.2 + 1) / set_aspect('equal')
+  const xRange  = xMax * 1.1;
+  const yRange  = hMax * 1.2 + 1;  // always from 0 to hMax — h0 is inside this range
+  const scale   = drawW / xRange;
+  const drawHc  = yRange * scale;
+  const scaleX  = scale;
+  const scaleY  = scale;
+
+  const totalW  = drawW  + PAD.left + PAD.right;
+  const totalH  = drawHc + PAD.top  + PAD.bottom;
+
+  cv.width  = Math.round(totalW * dpr);
+  cv.height = Math.round(totalH * dpr);
+  cv.style.width  = totalW + 'px';
+  cv.style.height = totalH + 'px';
+
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Coordinate helpers — y=0 is always ground level (bottom of plot)
+  const cx = x => PAD.left + x * scaleX;
+  const cy = y => PAD.top  + drawHc - y * scaleY;
+
+  // Background
+  ctx.fillStyle='#0b0f1a';
+  ctx.fillRect(0,0,totalW,totalH);
+
+  // ── Grid + Ticks ──
+  ctx.font = '10px Space Mono,monospace';
+
+  const xTicks = niceTicks(0, xMax*1.1, 6);
+  xTicks.forEach(v => {
+    const px=cx(v);
+    ctx.strokeStyle='#1f2d45'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(px,PAD.top); ctx.lineTo(px,PAD.top+drawHc); ctx.stroke();
+    ctx.fillStyle='#64748b'; ctx.textAlign='center';
+    ctx.fillText(nFmt(v), px, PAD.top+drawHc+16);
+  });
+
+  const yMax = hMax * 1.2 + 1; // from true 0 (ground)
+  const yTicks = niceTicks(h0, yMax, 5);
+  yTicks.forEach(v => {
+    const py=cy(v);
+    ctx.strokeStyle='#1f2d45'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(PAD.left,py); ctx.lineTo(PAD.left+drawW,py); ctx.stroke();
+    ctx.fillStyle='#64748b'; ctx.textAlign='right';
+    ctx.fillText(nFmt(v), PAD.left-5, py+3);
+  });
+
+  // Axis labels
+  ctx.fillStyle='#94a3b8'; ctx.font='10px Space Mono,monospace';
+  ctx.textAlign='center';
+  ctx.fillText('Wurfweite [m]', PAD.left+drawW/2, totalH-6);
+  ctx.save(); ctx.translate(13,PAD.top+drawHc/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Höhe [m]',0,0); ctx.restore();
+
+  // Zero lines
+  ctx.strokeStyle='#2d3f5e'; ctx.lineWidth=1.5;
+  const gy=cy(0); // ground is always y=0
+  ctx.beginPath(); ctx.moveTo(PAD.left,gy); ctx.lineTo(PAD.left+drawW,gy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.left,PAD.top); ctx.lineTo(PAD.left,PAD.top+drawHc); ctx.stroke();
+
+  // Draw h0 starting height as dashed line if h0 > 0
+  if (h0 > 0) {
+    ctx.strokeStyle='rgba(0,212,255,0.3)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(PAD.left,cy(h0)); ctx.lineTo(PAD.left+drawW,cy(h0)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(0,212,255,0.5)'; ctx.font='9px Space Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText(`h₀=${h0}m`, PAD.left-2, cy(h0)-3);
+  }
+
+  // ── Fill ──
+  // Draw ground fill only down to h0 level (not below ground)
+  ctx.beginPath();
+  ctx.moveTo(cx(xs[0]),cy(ys[0]));
+  xs.forEach((x,i)=>ctx.lineTo(cx(x),cy(ys[i])));
+  ctx.lineTo(cx(xs[xs.length-1]),cy(0));
+  ctx.lineTo(cx(xs[0]),cy(h0));
+  ctx.closePath();
+  ctx.fillStyle='rgba(0,212,255,0.07)'; ctx.fill();
+
+  // ── Trajectory ──
+  ctx.beginPath();
+  ctx.moveTo(cx(xs[0]),cy(ys[0]));
+  xs.forEach((x,i)=>ctx.lineTo(cx(x),cy(ys[i])));
+  ctx.strokeStyle='#00d4ff'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.stroke();
+
+  // ── Angle arc ──
+  const arcR = Math.min(drawW*0.1, drawHc*0.22, 38);
+  ctx.strokeStyle='#facc15'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx(0),cy(h0),arcR,-phi,0,true); ctx.stroke();
+  const midA=phi/2;
+  ctx.fillStyle='#facc15'; ctx.font='bold 10px Space Mono,monospace'; ctx.textAlign='left';
+  ctx.fillText(`${phi_deg}°`, cx(0)+(arcR+5)*Math.cos(midA), cy(h0)-(arcR+3)*Math.sin(midA));
+
+  // ── Launch arrow ──
+  const aLen=Math.min(drawW*0.13, drawHc*0.28, 48);
+  const aEx=cx(0)+aLen*Math.cos(phi), aEy=cy(h0)-aLen*Math.sin(phi);
+  ctx.strokeStyle='#facc15'; ctx.lineWidth=1.8; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(cx(0),cy(h0)); ctx.lineTo(aEx,aEy); ctx.stroke();
+  ctx.setLineDash([]);
+  const hl=7,ha=0.4;
+  ctx.fillStyle='#facc15'; ctx.beginPath();
+  ctx.moveTo(aEx,aEy);
+  ctx.lineTo(aEx-hl*Math.cos(phi-ha),aEy+hl*Math.sin(phi-ha));
+  ctx.lineTo(aEx-hl*Math.cos(phi+ha),aEy+hl*Math.sin(phi+ha));
+  ctx.closePath(); ctx.fill();
+
+  // ── Peak ──
+  const peakI=ys.indexOf(Math.max(...ys));
+  ctx.beginPath(); ctx.arc(cx(xs[peakI]),cy(ys[peakI]),6,0,Math.PI*2);
+  ctx.fillStyle='#ff6b35'; ctx.fill();
+  ctx.fillStyle='#ff6b35'; ctx.font='10px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(`${ys[peakI].toFixed(1)} m`, cx(xs[peakI]), cy(ys[peakI])-10);
+
+  // ── Landing ──
+  const lx=cx(xs[xs.length-1]), ly=cy(ys[ys.length-1]);
+  ctx.fillStyle='#39d98a'; ctx.beginPath();
+  ctx.moveTo(lx,ly-8); ctx.lineTo(lx-6,ly+5); ctx.lineTo(lx+6,ly+5); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#39d98a'; ctx.font='10px Space Mono,monospace'; ctx.textAlign='left';
+  ctx.fillText(`${xs[xs.length-1].toFixed(1)} m`, lx+9, ly+5);
+
+  document.getElementById('empty').style.display='none';
+  cv.style.display='block';
+  document.getElementById('chart-legend').style.display='flex';
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function niceTicks(min,max,n) {
+  const r=max-min, s=Math.pow(10,Math.floor(Math.log10(r/n)));
+  const ns=[1,2,2.5,5,10].map(f=>f*s);
+  const step=ns.find(f=>r/f<=n+1)||ns[ns.length-1];
+  const ticks=[];
+  const start=Math.ceil(min/step)*step;
+  for(let v=start;v<=max+step*0.01;v=Math.round((v+step)*1e9)/1e9) ticks.push(Math.round(v*1000)/1000);
+  return ticks;
+}
+function nFmt(v) { return v%1===0 ? v : (Math.abs(v)<10 ? v.toFixed(1) : Math.round(v)); }
+
+window.addEventListener('load', ()=>updateKanone());
+window.addEventListener('resize', ()=>{ if(lastParams) drawCanvas(lastParams); });
+</script>
+</body>
+</html>

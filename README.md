@@ -11,7 +11,7 @@
 
 ## 📱 Live Demo
 
-👉 **[pysic.github.io/PySic](https://github.com/ChristianOssinger/PySic)** *(Link nach GitHub Pages Aktivierung einfügen)*
+👉 **[pysic.github.io/PySic](https://github.com/ChristianOssinger/PySic)** 
 
 Works on desktop and mobile — no installation needed, runs entirely in the browser.
 
